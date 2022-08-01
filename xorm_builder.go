@@ -43,8 +43,8 @@ func DeepCondAlias(bean interface{}, tableAlias string) (builder.Cond, error) {
 		}
 		// if value is a nested struct and type not in excluding type's set
 		if value.Kind() == reflect.Struct && !isExcludeStruct(value.Type()) {
-			// already skipped invalid fields so don't care errors
 			alias := IfElse(f.Anonymous, tableAlias, xormNames.Obj2Table(f.Name))
+			// already skipped invalid fields so don't care errors
 			cond, _ := DeepCondAlias(value.Interface(), alias)
 			groups = append(groups, xbGroup{cond, tg.or})
 		} else {
