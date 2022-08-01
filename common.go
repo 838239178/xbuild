@@ -33,7 +33,11 @@ var excludeTypes = map[reflect.Type]struct{}{
 	reflect.TypeOf(time.Time{}): {},
 }
 
-func isUnexportedFieldName(name string) bool {
+func isUnexportedField(f *reflect.StructField) bool {
+	name := f.Name
+	if f.Anonymous {
+		name = f.Type.Name()
+	}
 	return unicode.IsLower([]rune(name[0:1])[0])
 }
 

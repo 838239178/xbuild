@@ -33,7 +33,7 @@ func DeepCondAlias(bean interface{}, tableAlias string) (builder.Cond, error) {
 		//init
 		f := beanType.Field(i)
 		value := reflect.Indirect(beanValue.Field(i))
-		if !value.IsValid() || isUnexportedFieldName(f.Name) {
+		if !value.IsValid() || isUnexportedField(&f) {
 			continue
 		}
 		tg := getTag(f.Tag)
