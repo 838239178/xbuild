@@ -73,3 +73,22 @@ func TestXormBuilder(t *testing.T) {
 		Join("INNER", "major", "major.id = test_table.major_id").
 		Get(&TestTable{})
 }
+
+func BenchmarkDeepCondAlias(b *testing.B) {
+	bean := TestBean{
+		IDIN: []int64{1, 2, 3},
+		TestGroup3: TestGroup3{
+			Major: TestGroup{
+				AgeGE: 12,
+				AgeLT: 100,
+			},
+			TestGroup2: TestGroup2{
+				Name:     "Yes",
+				PostDate: time.Now(),
+			},
+		},
+	}
+	for n := 0; n < b.N; n++ {
+		DeepCondAlias(bean, "test_table")
+	}
+}
