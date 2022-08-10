@@ -12,7 +12,7 @@ import (
 
 type TestBean struct {
 	TestGroup3
-	IDIN []int64
+	ID []int64 `sql:"opt=in"`
 }
 
 type TestGroup3 struct {
@@ -21,12 +21,14 @@ type TestGroup3 struct {
 }
 
 type TestGroup2 struct {
-	Name     string    `sql:"zero"`         //zero 允许零值
-	PostDate time.Time `sql:"zero,no-null"` //no-null将会生成一个组合判断：'(post_date = 'xx' AND post_date IS NOT NULL)'
+	Name       string        `sql:"zero"`         //zero 允许零值
+	PostDate   time.Time     `sql:"zero,no-null"` //no-null将会生成一个组合判断：'(post_date = 'xx' AND post_date IS NOT NULL)'
+	CreateDate *[2]time.Time `sql:"opt=btw"`
+	Info       string        `sql:"opt=like-r"`
 }
 
 type TestGroup struct {
-	AgeGE int
+	Age   int `sql:"opt=ge"`
 	AgeLT int //默认使用and拼接并忽略零值
 }
 
@@ -55,15 +57,17 @@ func init() {
 
 func TestXormBuilder(t *testing.T) {
 	cond, _ := DeepCondAlias(TestBean{
-		IDIN: []int64{1, 2, 3},
+		ID: []int64{1, 2, 3},
 		TestGroup3: TestGroup3{
 			Major: TestGroup{
-				AgeGE: 12,
+				Age:   12,
 				AgeLT: 100,
 			},
 			TestGroup2: TestGroup2{
-				Name:     "Yes",
-				PostDate: time.Now(),
+				Name:       "Yes",
+				PostDate:   time.Now(),
+				CreateDate: &[2]time.Time{time.Now(), time.Now()},
+				Info: "search",
 			},
 		},
 	}, "test_table")
@@ -76,10 +80,10 @@ func TestXormBuilder(t *testing.T) {
 
 func BenchmarkDeepCondAlias(b *testing.B) {
 	bean := TestBean{
-		IDIN: []int64{1, 2, 3},
+		ID: []int64{1, 2, 3},
 		TestGroup3: TestGroup3{
 			Major: TestGroup{
-				AgeGE: 12,
+				Age:   12,
 				AgeLT: 100,
 			},
 			TestGroup2: TestGroup2{

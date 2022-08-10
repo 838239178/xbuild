@@ -6,11 +6,31 @@ SQL builder base on xorm. Using a struct to build query sql.
 
 **using tag 'sql'**
 
-| Option  | Meaning                                   |
-| ------- | ----------------------------------------- |
-| zero    | Allowed zero value                        |
-| no-null | Concat 'AND xx IS NOT NULL' when building |
-| or      | Concat previous condition by 'OR'          |
+| Option  | Meaning                                                    |
+| ------- | ---------------------------------------------------------- |
+| zero    | Allowed zero value                                         |
+| no-null | Concat 'AND xx IS NOT NULL' when building                  |
+| or      | Concat previous condition by 'OR'                          |
+| opt     | eq/in/gt... If this doesn't exist, judging from field name |
+
+### Supported opt
+
+| Opt        | Meaning           |
+| ---------- | ----------------- |
+| eq         | =                 |
+| neq        | !=                |
+| gt         | >                 |
+| ge         | >=                |
+| lt         | <                 |
+| le         | <=                |
+| in         | IN                |
+| not-in/nin | NOT IN            |
+| like       | LIKE %value%      |
+| like-l     | LIKE %value       |
+| like-r     | LIKE value%       |
+| btw        | BETWEEN v1 AND v2 |
+
+> `btw` panic if value is not array or slice or contains nil element
 
 ## Example
 

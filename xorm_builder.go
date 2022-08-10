@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"reflect"
+	"strings"
 
 	"xorm.io/builder"
 )
@@ -28,7 +29,7 @@ func DeepCondAlias(bean interface{}, tableAlias string) (builder.Cond, error) {
 	}
 	// collect fields and sub-groups
 	var groups []xbGroup
-	var fields []field
+	fields := make([]field, 0, beanType.NumField())
 	for i := 0; i < beanType.NumField(); i++ {
 		//init
 		f := beanType.Field(i)
@@ -70,19 +71,24 @@ func DeepCondAlias(bean interface{}, tableAlias string) (builder.Cond, error) {
 func buildCond(fs []field, alias string) builder.Cond {
 	var cond builder.Cond
 	for _, f := range fs {
-		//regex
-		res := cmpSuffix.FindStringSubmatch(f.fie.Name)
 		var actualName, cmp string
-		if len(res) == 3 {
-			actualName = res[1]
-			cmp = res[2]
+		if f.tag.opt == "" {
+			//regex
+			res := cmpSuffix.FindStringSubmatch(f.fie.Name)
+			if len(res) == 3 {
+				actualName = res[1]
+				cmp = res[2]
+			} else {
+				actualName = f.fie.Name
+				cmp = "EQ"
+			}
 		} else {
 			actualName = f.fie.Name
-			cmp = "EQ"
+			cmp = f.tag.opt
 		}
 		actualName = xormNames.Obj2Table(actualName)
 		actualName = IfElse(alias != "", fmt.Sprintf("`%s`.`%s`", alias, actualName), actualName)
-		c := getCond(cmp, actualName, f.val.Interface())
+		c := getCond(cmp, actualName, f.val)
 		if !f.tag.null {
 			c = c.And(builder.NotNull{actualName})
 		}
@@ -97,13 +103,16 @@ func buildCond(fs []field, alias string) builder.Cond {
 	return cond
 }
 
-func getCond(cmp string, key string, value interface{}) builder.Cond {
-	switch cmp {
+func getCond(cmp string, key string, refVal *reflect.Value) builder.Cond {
+	value := refVal.Interface()
+	switch strings.ToUpper(cmp) {
 	case "IN":
 		fallthrough
 	case "EQ":
 		return builder.Eq{key: value}
 	case "NIN":
+		fallthrough
+	case "NOT-IN":
 		fallthrough
 	case "NEQ":
 		return builder.Neq{key: value}
@@ -115,6 +124,18 @@ func getCond(cmp string, key string, value interface{}) builder.Cond {
 		return builder.Lte{key: value}
 	case "GE":
 		return builder.Gte{key: value}
+	case "LIKE-L":
+		return builder.Like{key, fmt.Sprint("%", value)}
+	case "LIKE-R":
+		return builder.Like{key, fmt.Sprint(value, "%")}
+	case "LIKE":
+		return builder.Like{key, fmt.Sprint("%", value, "%")}
+	case "BTW":
+		return builder.Between{
+			Col: key, 
+			LessVal: refVal.Index(0).Interface(), 
+			MoreVal: refVal.Index(1).Interface(),
+		}	
 	}
 	panic("unknown " + cmp)
 }

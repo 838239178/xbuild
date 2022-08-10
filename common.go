@@ -11,9 +11,10 @@ import (
 )
 
 type sqlTag struct {
-	zero bool //zero allowed zero value if true otherwise skip it (default false)
-	or   bool //or use OR to concat condition (default false)
-	null bool //null allowed null value if true otherwise concat 'AND xxx IS NOT NULL' (default true)
+	zero bool   //zero allowed zero value if true otherwise skip it (default false)
+	or   bool   //or use OR to concat condition (default false)
+	null bool   //null allowed null value if true otherwise concat 'AND xxx IS NOT NULL' (default true)
+	opt  string //opt eq/lt/ge...
 }
 
 type field struct {
@@ -63,6 +64,15 @@ func getTag(tg reflect.StructTag) (gtg sqlTag) {
 				gtg.or = true
 			case "no-null":
 				gtg.null = false
+			default:
+				if strings.ContainsRune(opt, '=') {
+					if kv := strings.Split(opt, "="); len(kv) > 1 {
+						switch kv[0] {
+						case "opt":
+							gtg.opt	= kv[1]
+						}
+					}
+				}
 			}
 		}
 	}
