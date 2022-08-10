@@ -4,7 +4,7 @@ SQL builder base on xorm. Using a struct to build query sql.
 
 ## Config tags
 
-**using tag 'sql'**
+**Using tag 'sql'. Split by ','. Key-value like 'k=v'**
 
 | Option  | Meaning                                                    |
 | ------- | ---------------------------------------------------------- |
