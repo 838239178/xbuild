@@ -17,19 +17,23 @@ type TestBean struct {
 
 type TestGroup3 struct {
 	Major      TestGroup
-	TestGroup2 `sql:"or"` //与前一个组合通过OR拼接
+	TestGroup2 `sql:"or"` //contact previous condition with 'OR'
 }
 
 type TestGroup2 struct {
-	Name       string        `sql:"zero"`         //zero 允许零值
-	PostDate   time.Time     `sql:"zero,no-null"` //no-null将会生成一个组合判断：'(post_date = 'xx' AND post_date IS NOT NULL)'
-	CreateDate *[2]time.Time `sql:"opt=btw"`
-	Info       string        `sql:"opt=like-r"`
+	Name       string        `sql:"zero"`         //zero means allow zero value
+	PostDate   time.Time     `sql:"zero,no-null"` //no-null means '(post_date = 'xx' AND post_date IS NOT NULL)'
+	CreateDate *[2]time.Time `sql:"opt=btw"`      //btw means 'create_date BETWEEN ? AND ?'; nil value cause panic; won't ignore zero value even if there has the `zero` tag
+	Info       string        `sql:"opt=like-r"`   //like-r means 'info LIKE ?%'; like-l means '%?'; like means '%?%';
 }
 
 type TestGroup struct {
-	Age   int `sql:"opt=ge"`
-	AgeLT int //默认使用and拼接并忽略零值
+	Age *[2]int `sql:"opt=gt&le"` // zero value in array will be ignored if no `zero` tag; `&` means 'AND'; `|` means 'OR'
+}
+
+type TestSplitter struct {
+	Age  *[2]int    `sql:"opt=gt&le"`
+	Date *[2]string `sql:"opt=ge|le"`
 }
 
 type TestTable struct {
@@ -55,19 +59,27 @@ func init() {
 	}
 }
 
+func TestXormBuilderSplitter(t *testing.T) {
+	cond, _ := DeepCond(&TestSplitter{
+		Age:  &[2]int{10, 20},
+		Date: &[2]string{"2022-10-11", "2018-09-11"},
+	})
+	xormDB.ShowSQL(true)
+	_, _ = xormDB.Where(cond).Get(&TestTable{})
+}
+
 func TestXormBuilder(t *testing.T) {
 	cond, _ := DeepCondAlias(TestBean{
 		ID: []int64{1, 2, 3},
 		TestGroup3: TestGroup3{
 			Major: TestGroup{
-				Age:   12,
-				AgeLT: 100,
+				Age: &[2]int{5, 10},
 			},
 			TestGroup2: TestGroup2{
 				Name:       "Yes",
 				PostDate:   time.Now(),
 				CreateDate: &[2]time.Time{time.Now(), time.Now()},
-				Info: "search",
+				Info:       "search",
 			},
 		},
 	}, "test_table")
@@ -83,8 +95,7 @@ func BenchmarkDeepCondAlias(b *testing.B) {
 		ID: []int64{1, 2, 3},
 		TestGroup3: TestGroup3{
 			Major: TestGroup{
-				Age:   12,
-				AgeLT: 100,
+				Age: &[2]int{18, 199},
 			},
 			TestGroup2: TestGroup2{
 				Name:     "Yes",
@@ -93,6 +104,6 @@ func BenchmarkDeepCondAlias(b *testing.B) {
 		},
 	}
 	for n := 0; n < b.N; n++ {
-		DeepCondAlias(bean, "test_table")
+		_, _ = DeepCondAlias(bean, "test_table")
 	}
 }

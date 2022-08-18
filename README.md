@@ -11,7 +11,7 @@ SQL builder base on xorm. Using a struct to build query sql.
 | zero    | Allowed zero value                                         |
 | no-null | Concat 'AND xx IS NOT NULL' when building                  |
 | or      | Concat previous condition by 'OR'                          |
-| opt     | eq/in/gt... If this doesn't exist, judging from field name |
+| opt=?   | eq/in/gt... If this doesn't exist, judging from field name |
 
 ### Supported opt
 
@@ -30,7 +30,21 @@ SQL builder base on xorm. Using a struct to build query sql.
 | like-r     | LIKE value%       |
 | btw        | BETWEEN v1 AND v2 |
 
-> `btw` panic if value is not array or slice or contains nil element
+> `btw` panic if value is not array or slice or containing nil element
+
+#### Group opt
+
+Using '&' or '|' to group conditions with array parameter. Ex:
+
+```go	
+type Cond struct {
+  Age  *[2]int 				`sql:"opt=gt&le"`
+  Date *[2]time.Time  `sql:"opt=gt|lt,zero"`
+}
+// age >= ? AND age < ? AND (date >= ? OR date < ?) 
+```
+
+> using others splitter will cause panic
 
 ## Example
 

@@ -23,6 +23,10 @@ type field struct {
 	val *reflect.Value
 }
 
+func (f *field) IsValid() bool {
+	return f.val.IsValid() && (!f.val.IsZero() || f.tag.zero)
+}
+
 var (
 	ErrNilValue  = errors.New("nil value")
 	ErrNotStruct = errors.New("not struct")
@@ -69,7 +73,7 @@ func getTag(tg reflect.StructTag) (gtg sqlTag) {
 					if kv := strings.Split(opt, "="); len(kv) > 1 {
 						switch kv[0] {
 						case "opt":
-							gtg.opt	= kv[1]
+							gtg.opt = kv[1]
 						}
 					}
 				}

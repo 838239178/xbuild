@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
-
 	"xorm.io/builder"
 )
 
@@ -88,7 +87,12 @@ func buildCond(fs []field, alias string) builder.Cond {
 		}
 		actualName = xormNames.Obj2Table(actualName)
 		actualName = IfElse(alias != "", fmt.Sprintf("`%s`.`%s`", alias, actualName), actualName)
-		c := getCond(cmp, actualName, f.val)
+		var c builder.Cond
+		if strings.ContainsAny(cmp, "&|") {
+			c = arrayCond(cmp, actualName, f.val, f.tag)
+		} else {
+			c = getCond(cmp, actualName, f.val)
+		}
 		if !f.tag.null {
 			c = c.And(builder.NotNull{actualName})
 		}
@@ -101,6 +105,61 @@ func buildCond(fs []field, alias string) builder.Cond {
 		}
 	}
 	return cond
+}
+
+func arrayCond(cmp string, key string, refVal *reflect.Value, tg *sqlTag) builder.Cond {
+	var temp builder.Cond
+	op := ' '
+	c := make([]rune, 0, 2)
+	var i int
+	for _, r := range cmp {
+		if r == '&' || r == '|' {
+			if op == '&' {
+				val := refVal.Index(i)
+				if val.IsValid() && (!val.IsZero() || tg.zero) {
+					temp = temp.And(getCond(string(c), key, &val))
+				}
+				c, i, op = c[0:0:2], i+1, r
+			} else if op == '|' {
+				val := refVal.Index(i)
+				if val.IsValid() && (!val.IsZero() || tg.zero) {
+					temp = temp.Or(getCond(string(c), key, &val))
+				}
+				c, i, op = c[0:0:2], i+1, r
+			} else if op == ' ' {
+				val := refVal.Index(i)
+				if val.IsValid() && (!val.IsZero() || tg.zero) {
+					temp = getCond(string(c), key, &val)
+					// if first value is not valid, keep op blank
+					op = r
+				}
+				c, i = c[0:0:2], i+1
+			} else {
+				panic("unknown split " + string(op))
+			}
+		} else {
+			c = append(c, r)
+		}
+	}
+	if temp == nil {
+		// if all elements are not valid, return empty cond
+		return builder.NewCond()
+	}
+	// solve last one
+	if op == '&' {
+		val := refVal.Index(i)
+		if val.IsValid() && (!val.IsZero() || tg.zero) {
+			temp = temp.And(getCond(string(c), key, &val))
+		}
+	} else if op == '|' {
+		val := refVal.Index(i)
+		if val.IsValid() && (!val.IsZero() || tg.zero) {
+			temp = temp.Or(getCond(string(c), key, &val))
+		}
+	} else {
+		panic("unknown split " + string(op))
+	}
+	return temp
 }
 
 func getCond(cmp string, key string, refVal *reflect.Value) builder.Cond {
@@ -132,10 +191,10 @@ func getCond(cmp string, key string, refVal *reflect.Value) builder.Cond {
 		return builder.Like{key, fmt.Sprint("%", value, "%")}
 	case "BTW":
 		return builder.Between{
-			Col: key, 
-			LessVal: refVal.Index(0).Interface(), 
+			Col:     key,
+			LessVal: refVal.Index(0).Interface(),
 			MoreVal: refVal.Index(1).Interface(),
-		}	
+		}
 	}
 	panic("unknown " + cmp)
 }
