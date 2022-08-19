@@ -1,3 +1,4 @@
 dsn.txt
 *.exe
 .idea
+vendor

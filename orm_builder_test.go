@@ -1,12 +1,14 @@
 package main
 
 import (
-	_ "github.com/go-sql-driver/mysql"
 	"io/ioutil"
 	"os"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
+
+	_ "github.com/go-sql-driver/mysql"
 	"xorm.io/xorm"
 )
 
@@ -32,7 +34,7 @@ type TestGroup struct {
 }
 
 type TestSplitter struct {
-	Age  *[2]int    `sql:"opt=gt&le"`
+	Age  *[2]int   `sql:"opt=gt&le"`
 	Date *[2]string `sql:"opt=ge|le"`
 }
 
@@ -57,23 +59,23 @@ func init() {
 	if xormDB, err = xorm.NewEngine("mysql", strings.TrimSpace(string(dsn))); err != nil {
 		panic(err)
 	}
+	xormDB.ShowSQL(true)
 }
 
 func TestXormBuilderSplitter(t *testing.T) {
 	cond, _ := DeepCond(&TestSplitter{
-		Age:  &[2]int{10, 20},
-		Date: &[2]string{"2022-10-11", "2018-09-11"},
+		Age: &[2]int{10, 20},
+		Date: &[2]string{"2022-11-01",""},
 	})
-	xormDB.ShowSQL(true)
 	_, _ = xormDB.Where(cond).Get(&TestTable{})
 }
 
 func TestXormBuilder(t *testing.T) {
-	cond, _ := DeepCondAlias(TestBean{
+	cond, _ := DeepCondAlias(&TestBean{
 		ID: []int64{1, 2, 3},
 		TestGroup3: TestGroup3{
 			Major: TestGroup{
-				Age: &[2]int{5, 10},
+				Age: &[2]int{10,20},
 			},
 			TestGroup2: TestGroup2{
 				Name:       "Yes",
@@ -84,26 +86,45 @@ func TestXormBuilder(t *testing.T) {
 		},
 	}, "test_table")
 	xormDB.ShowSQL(true)
-	_, _ = xormDB.Where(cond).
+	_,_ = xormDB.Where(cond).
 		Select("id,age,major_id").
 		Join("INNER", "major", "major.id = test_table.major_id").
 		Get(&TestTable{})
 }
 
 func BenchmarkDeepCondAlias(b *testing.B) {
-	bean := TestBean{
+	bean := &TestBean{
 		ID: []int64{1, 2, 3},
 		TestGroup3: TestGroup3{
 			Major: TestGroup{
-				Age: &[2]int{18, 199},
+				Age: &[2]int{10,20},
 			},
 			TestGroup2: TestGroup2{
-				Name:     "Yes",
-				PostDate: time.Now(),
+				Name:       "Yes",
+				PostDate:   time.Now(),
+				CreateDate: &[2]time.Time{time.Now(), time.Now()},
+				Info:       "search",
 			},
 		},
 	}
 	for n := 0; n < b.N; n++ {
 		_, _ = DeepCondAlias(bean, "test_table")
 	}
+}
+
+func TestReflectValue(t *testing.T) {
+	bean := &TestTable{
+		Age: 20,
+	}
+	fn := func(t interface{}) {
+		switch t := t.(type) {
+		case TestTable:
+			t.Age += 10
+		case *TestTable:
+			t.Age -= 10
+		}
+	}
+	beanVal := reflect.Indirect(reflect.ValueOf(bean)) 
+	fn(beanVal.Addr().Interface())
+	t.Logf("%#v", bean)
 }

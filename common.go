@@ -6,7 +6,6 @@ import (
 	"regexp"
 	"strings"
 	"time"
-	"unicode"
 	"xorm.io/xorm/names"
 )
 
@@ -20,7 +19,7 @@ type sqlTag struct {
 type field struct {
 	tag *sqlTag
 	fie *reflect.StructField
-	val *reflect.Value
+	val reflect.Value
 }
 
 func (f *field) IsValid() bool {
@@ -36,14 +35,6 @@ var cmpSuffix = regexp.MustCompile(`^(\w+)(GT|LT|GE|LE|EQ|NEQ|IN|NIN)$`)
 var xormNames names.Mapper = names.GonicMapper{}
 var excludeTypes = map[reflect.Type]struct{}{
 	reflect.TypeOf(time.Time{}): {},
-}
-
-func isUnexportedField(f *reflect.StructField) bool {
-	name := f.Name
-	if f.Anonymous {
-		name = f.Type.Name()
-	}
-	return unicode.IsLower([]rune(name[0:1])[0])
 }
 
 func SetXormNames(mapper names.Mapper) {
@@ -83,9 +74,66 @@ func getTag(tg reflect.StructTag) (gtg sqlTag) {
 	return
 }
 
-func IfElse(cond bool, trueStr, falseStr string) string {
+func ifElse(cond bool, trueStr, falseStr string) string {
 	if cond {
 		return trueStr
 	}
 	return falseStr
+}
+
+func orElse(cond bool, trueVal, falseVal interface{}) interface{} {
+	if cond {
+		return trueVal
+	}
+	return falseVal
+}
+
+func realKind(val reflect.Value) reflect.Kind {
+	return reflect.Indirect(val).Kind()
+}
+
+func realType(val reflect.Value) reflect.Type {
+	return reflect.Indirect(val).Type()
+}
+
+func validPtr2Struct(val reflect.Value) error {
+	if val.Kind() != reflect.Ptr {
+		return errors.New("needs a pointer to a value")
+	} else if val.Elem().Kind() == reflect.Ptr {
+		return errors.New("a pointer to a pointer is not allowed")
+	} else if val.IsNil() {
+		return ErrNilValue
+	}
+	return nil
+}
+
+// isNilPtr only an addressable type may be true; zero value always false
+func isNilPtr(val reflect.Value) bool {
+	switch val.Kind() {
+	case reflect.Chan, reflect.Func,
+		reflect.Interface, reflect.Map,
+		reflect.Ptr, reflect.Slice,
+		reflect.UnsafePointer:
+		return val.IsNil()
+	default:
+		return false
+	}
+}
+
+func isExported(val reflect.Value) bool {
+	return val.CanInterface()
+}
+
+// toInterface avoid big mem-copy
+func toInterface(val reflect.Value) interface{} {
+	switch val.Kind() {
+	case reflect.Chan, reflect.Func,
+		reflect.Interface, reflect.Map,
+		reflect.Ptr, reflect.Slice,
+		reflect.UnsafePointer:
+		return val.Interface()
+	case reflect.Struct, reflect.Array:
+		return val.Addr().Interface()
+	}
+	return val.Interface()
 }

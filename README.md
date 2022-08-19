@@ -63,5 +63,12 @@ pkg: github.com/838239178/xbuild
 cpu: Intel(R) Core(TM) i5-7360U CPU @ 2.30GHz
 BenchmarkDeepCondAlias
 BenchmarkDeepCondAlias-4   	   88532	     14760 ns/op
+// after improve
+goos: darwin
+goarch: amd64
+pkg: github.com/838239178/xbuild
+cpu: Intel(R) Core(TM) i5-7360U CPU @ 2.30GHz
+BenchmarkDeepCondAlias
+BenchmarkDeepCondAlias-4   	   92397	     13137 ns/op	    5699 B/op	     161 allocs/op
 ```
 
