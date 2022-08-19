@@ -68,21 +68,7 @@ func DeepCondAlias(bean interface{}, tableAlias string) (builder.Cond, error) {
 func buildCond(fs []*field, alias string) builder.Cond {
 	var cond builder.Cond
 	for _, f := range fs {
-		var actualName, cmp string
-		if f.tag.opt == "" {
-			//regex
-			res := cmpSuffix.FindStringSubmatch(f.fie.Name)
-			if len(res) == 3 {
-				actualName = res[1]
-				cmp = res[2]
-			} else {
-				actualName = f.fie.Name
-				cmp = "EQ"
-			}
-		} else {
-			actualName = f.fie.Name
-			cmp = f.tag.opt
-		}
+		actualName, cmp := f.tag.Column(f.fie.Name), f.tag.Oper()
 		actualName = xormNames.Obj2Table(actualName)
 		actualName = ifElse(alias != "", fmt.Sprintf("`%s`.`%s`", alias, actualName), actualName)
 		var c builder.Cond
@@ -150,15 +136,9 @@ func condBySplitter(cond1, cond2 builder.Cond, splitter rune) builder.Cond {
 func getCond(cmp string, key string, refVal reflect.Value) builder.Cond {
 	value := toInterface(refVal)
 	switch strings.ToUpper(cmp) {
-	case "IN":
-		fallthrough
-	case "EQ":
+	case "IN", "EQ":
 		return builder.Eq{key: value}
-	case "NIN":
-		fallthrough
-	case "NOT-IN":
-		fallthrough
-	case "NEQ":
+	case "NOT-IN", "NIN", "NEQ":
 		return builder.Neq{key: value}
 	case "GT":
 		return builder.Gt{key: value}

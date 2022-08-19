@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"reflect"
-	"regexp"
 	"strings"
 	"time"
 	"xorm.io/xorm/names"
@@ -14,6 +13,15 @@ type sqlTag struct {
 	or   bool   //or use OR to concat condition (default false)
 	null bool   //null allowed null value if true otherwise concat 'AND xxx IS NOT NULL' (default true)
 	opt  string //opt eq/lt/ge...
+	col  string //column name
+}
+
+func (s *sqlTag) Oper() string {
+	return ifElse(s.opt == "", "EQ", s.opt)
+}
+
+func (s *sqlTag) Column(def string) string {
+	return ifElse(s.col == "", def, s.col)
 }
 
 type field struct {
@@ -31,7 +39,6 @@ var (
 	ErrNotStruct = errors.New("not struct")
 )
 
-var cmpSuffix = regexp.MustCompile(`^(\w+)(GT|LT|GE|LE|EQ|NEQ|IN|NIN)$`)
 var xormNames names.Mapper = names.GonicMapper{}
 var excludeTypes = map[reflect.Type]struct{}{
 	reflect.TypeOf(time.Time{}): {},
@@ -65,6 +72,8 @@ func getTag(tg reflect.StructTag) (gtg sqlTag) {
 						switch kv[0] {
 						case "opt":
 							gtg.opt = kv[1]
+						case "col":
+							gtg.col = kv[1]
 						}
 					}
 				}

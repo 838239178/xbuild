@@ -6,12 +6,15 @@ SQL builder base on xorm. Using a struct to build query sql.
 
 **Using tag 'sql'. Split by ','. Key-value like 'k=v'**
 
-| Option  | Meaning                                                    |
-| ------- | ---------------------------------------------------------- |
-| zero    | Allowed zero value                                         |
-| no-null | Concat 'AND xx IS NOT NULL' when building                  |
-| or      | Concat previous condition by 'OR'                          |
-| opt=?   | eq/in/gt... If this doesn't exist, judging from field name |
+| Option  | Meaning                                   |
+| ------- | ----------------------------------------- |
+| zero    | Allowed zero value                        |
+| no-null | Concat 'AND xx IS NOT NULL' when building |
+| or      | Concat previous condition by 'OR'         |
+| opt=?   | eq/in/gt... default is eq                 |
+| col=?   | define column name, default is field name |
+
+> FieldName Operation judging has been deprecated
 
 ### Supported opt
 
@@ -62,13 +65,6 @@ goarch: amd64
 pkg: github.com/838239178/xbuild
 cpu: Intel(R) Core(TM) i5-7360U CPU @ 2.30GHz
 BenchmarkDeepCondAlias
-BenchmarkDeepCondAlias-4   	   88532	     14760 ns/op
-// after improve
-goos: darwin
-goarch: amd64
-pkg: github.com/838239178/xbuild
-cpu: Intel(R) Core(TM) i5-7360U CPU @ 2.30GHz
-BenchmarkDeepCondAlias
-BenchmarkDeepCondAlias-4   	   92397	     13137 ns/op	    5699 B/op	     161 allocs/op
+BenchmarkDeepCondAlias-4   	  106696	     11351 ns/op	    5889 B/op	     161 allocs/op
 ```
 
