@@ -1,5 +1,7 @@
 # XormBuilder
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/838239178/xbuild.svg)](https://pkg.go.dev/github.com/838239178/xbuild)
+
 SQL builder base on xorm. Using a struct to build query sql.
 
 ## Config tags
