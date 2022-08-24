@@ -1,4 +1,4 @@
-package main
+package xbuild
 
 import (
 	"io/ioutil"
