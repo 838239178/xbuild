@@ -34,8 +34,10 @@ type TestGroup struct {
 }
 
 type TestSplitter struct {
-	Age  *[2]int   `sql:"opt=gt&le"`
+	Age  *[2]int    `sql:"opt=gt&le"`
 	Date *[2]string `sql:"opt=ge|le"`
+	//StartDate string     `sql:"opt=gt,col=date"`	//col define the actual column name
+	//EndDate   string     `sql:"opt=lt,col=date"`
 }
 
 type TestTable struct {
@@ -64,8 +66,8 @@ func init() {
 
 func TestXormBuilderSplitter(t *testing.T) {
 	cond, _ := DeepCond(&TestSplitter{
-		Age: &[2]int{10, 20},
-		Date: &[2]string{"2022-11-01",""},
+		Age:  &[2]int{10, 20},
+		Date: &[2]string{"2022-11-01", ""},
 	})
 	_, _ = xormDB.Where(cond).Get(&TestTable{})
 }
@@ -75,7 +77,7 @@ func TestXormBuilder(t *testing.T) {
 		ID: []int64{1, 2, 3},
 		TestGroup3: TestGroup3{
 			Major: TestGroup{
-				Age: &[2]int{10,20},
+				Age: &[2]int{10, 20},
 			},
 			TestGroup2: TestGroup2{
 				Name:       "Yes",
@@ -86,7 +88,7 @@ func TestXormBuilder(t *testing.T) {
 		},
 	}, "test_table")
 	xormDB.ShowSQL(true)
-	_,_ = xormDB.Where(cond).
+	_, _ = xormDB.Where(cond).
 		Select("id,age,major_id").
 		Join("INNER", "major", "major.id = test_table.major_id").
 		Get(&TestTable{})
@@ -97,7 +99,7 @@ func BenchmarkDeepCondAlias(b *testing.B) {
 		ID: []int64{1, 2, 3},
 		TestGroup3: TestGroup3{
 			Major: TestGroup{
-				Age: &[2]int{10,20},
+				Age: &[2]int{10, 20},
 			},
 			TestGroup2: TestGroup2{
 				Name:       "Yes",
@@ -124,7 +126,7 @@ func TestReflectValue(t *testing.T) {
 			t.Age -= 10
 		}
 	}
-	beanVal := reflect.Indirect(reflect.ValueOf(bean)) 
+	beanVal := reflect.Indirect(reflect.ValueOf(bean))
 	fn(beanVal.Addr().Interface())
 	t.Logf("%#v", bean)
 }
