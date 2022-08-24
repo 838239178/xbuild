@@ -35,7 +35,7 @@ func DeepCondAlias(bean interface{}, tableAlias string) (builder.Cond, error) {
 			continue
 		}
 		tg := getTag(f.Tag)
-		if value.IsZero() && !tg.zero {
+		if tg.ignore || (value.IsZero() && !tg.zero) {
 			// if value is zero and field no allow zero, skip
 			continue
 		}

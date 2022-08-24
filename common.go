@@ -9,11 +9,12 @@ import (
 )
 
 type sqlTag struct {
-	zero bool   //zero allowed zero value if true otherwise skip it (default false)
-	or   bool   //or use OR to concat condition (default false)
-	null bool   //null allowed null value if true otherwise concat 'AND xxx IS NOT NULL' (default true)
-	opt  string //opt eq/lt/ge...
-	col  string //column name
+	ignore bool   //ignore ignoring field
+	zero   bool   //zero allowed zero value if true otherwise skip it (default false)
+	or     bool   //or use OR to concat condition (default false)
+	null   bool   //null allowed null value if true otherwise concat 'AND xxx IS NOT NULL' (default true)
+	opt    string //opt eq/lt/ge...
+	col    string //column name
 }
 
 func (s *sqlTag) Oper() string {
@@ -60,6 +61,9 @@ func getTag(tg reflect.StructTag) (gtg sqlTag) {
 		lst := strings.Split(str, ",")
 		for _, opt := range lst {
 			switch opt {
+			case "-":
+				gtg.ignore = true
+				return
 			case "zero":
 				gtg.zero = true
 			case "or":
