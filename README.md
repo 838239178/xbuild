@@ -43,8 +43,8 @@ Using '&' or '|' to group conditions with array parameter. Ex:
 
 ```go	
 type Cond struct {
-  Age  *[2]int 				`sql:"opt=gt&le"`
-  Date *[2]time.Time  `sql:"opt=gt|lt,zero"`
+  Age  *[2]int 				`sql:"opt=gt&le"`       //zero value element will be ignored
+  Date *[2]time.Time  `sql:"opt=gt|lt,zero"`  //allow zero value element
 }
 // age >= ? AND age < ? AND (date >= ? OR date < ?) 
 ```
