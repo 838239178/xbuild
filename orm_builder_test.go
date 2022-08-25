@@ -10,6 +10,7 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	"xorm.io/xorm"
+	"xorm.io/xorm/names"
 )
 
 type TestBean struct {
@@ -61,6 +62,7 @@ func init() {
 	if xormDB, err = xorm.NewEngine("mysql", strings.TrimSpace(string(dsn))); err != nil {
 		panic(err)
 	}
+	xormDB.SetMapper(names.GonicMapper{})
 	xormDB.ShowSQL(true)
 }
 
@@ -69,6 +71,7 @@ func TestXormBuilderSplitter(t *testing.T) {
 		Age:  &[2]int{10, 20},
 		Date: &[2]string{"2022-11-01", ""},
 	})
+	// SELECT `id`, `age`, `major_id`, `post_date` FROM `tb` WHERE age>? AND age<=? AND date>=? LIMIT 1
 	_, _ = xormDB.Where(cond).Get(&TestTable{})
 }
 
@@ -86,11 +89,23 @@ func TestXormBuilder(t *testing.T) {
 				Info:       "search",
 			},
 		},
-	}, "test_table")
-	xormDB.ShowSQL(true)
-	_, _ = xormDB.Where(cond).
-		Select("id,age,major_id").
-		Join("INNER", "major", "major.id = test_table.major_id").
+	}, "tb")
+	// SELECT tb.id, tb.age, tb.major_id
+	// FROM `tb` INNER JOIN `major` ON major.id = tb.major_id 
+	// WHERE `tb`.`id` IN (?,?,?) 
+	// AND (
+	//	(`major`.`age`>? AND `major`.`age`<=?) 
+	//	OR (
+	//		`tb`.`name`=? 
+	//		AND `tb`.`post_date`=? 
+	//		AND `tb`.`post_date` IS NOT NULL 
+	//		AND `tb`.`create_date` BETWEEN ? AND ? 
+	//		AND `tb`.`info` LIKE ?
+	//	)
+    //)
+	_, _ = xormDB.Table(&TestTable{}).Alias("tb").Where(cond).
+		Select("tb.id, tb.age, tb.major_id").
+		Join("INNER", "major", "major.id = tb.major_id").
 		Get(&TestTable{})
 }
 
@@ -110,7 +125,7 @@ func BenchmarkDeepCondAlias(b *testing.B) {
 		},
 	}
 	for n := 0; n < b.N; n++ {
-		_, _ = DeepCondAlias(bean, "test_table")
+		_, _ = DeepCondAlias(bean, "tb")
 	}
 }
 
