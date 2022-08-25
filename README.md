@@ -11,6 +11,7 @@ SQL builder base on xorm. Using a struct to build query sql.
 | Option  | Meaning                                   |
 | ------- | ----------------------------------------- |
 | zero    | Allowed zero value                        |
+| -       | skip field                                |
 | no-null | Concat 'AND xx IS NOT NULL' when building |
 | or      | Concat previous condition by 'OR'         |
 | opt=?   | eq/in/gt... default is eq                 |
