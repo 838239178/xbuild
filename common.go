@@ -120,7 +120,7 @@ func validPtr2Struct(val reflect.Value) error {
 	return nil
 }
 
-// isNilPtr only an addressable type may be true; zero value always false
+// isNilPtr only a reference type may be true; zero value always false
 func isNilPtr(val reflect.Value) bool {
 	switch val.Kind() {
 	case reflect.Chan, reflect.Func,

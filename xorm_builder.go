@@ -24,7 +24,7 @@ func DeepCondAlias(bean interface{}, tableAlias string) (builder.Cond, error) {
 		return nil, err
 	}
 	beanType := realType(beanValue)
-	// collect fields and sub-groups
+	// collect fields and subgroups
 	var groups []*xbGroup
 	fields := make([]*field, 0, beanType.NumField())
 	for i := 0; i < beanType.NumField(); i++ {
@@ -42,7 +42,7 @@ func DeepCondAlias(bean interface{}, tableAlias string) (builder.Cond, error) {
 		// if value is a nested struct and type not in excluding type's set
 		if realKind(value) == reflect.Struct && !isExcludeStruct(realType(value)) {
 			alias := ifElse(f.Anonymous, tableAlias, xormNames.Obj2Table(f.Name))
-			// already skipped invalid fields so don't care errors
+			// already skipped invalid fields so don't care error
 			cond, _ := DeepCondAlias(toInterface(value), alias)
 			groups = append(groups, &xbGroup{cond, tg.or})
 		} else {
@@ -155,6 +155,7 @@ func getCond(cmp string, key string, refVal reflect.Value) builder.Cond {
 	case "LIKE":
 		return builder.Like{key, fmt.Sprint("%", value, "%")}
 	case "BTW":
+		// ensure to slice or array
 		realVal := reflect.Indirect(refVal)
 		return builder.Between{
 			Col:     key,
@@ -162,5 +163,5 @@ func getCond(cmp string, key string, refVal reflect.Value) builder.Cond {
 			MoreVal: toInterface(realVal.Index(1)),
 		}
 	}
-	panic("unknown " + cmp)
+	panic("unknown opt " + cmp)
 }
