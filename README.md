@@ -46,9 +46,9 @@
 ```go	
 type Cond struct {
   Age  *[2]int 				`sql:"opt=gt&le"`       //zero value element will be ignored
-  Date *[2]time.Time        `sql:"opt=gt|lt,zero"`  //allow zero value element
+  Date *[2]time.Time  `sql:"opt=gt|lt,zero"`  //allow zero value element
 }
-// age >= ? AND age < ? AND (date >= ? OR date < ?) 
+// age > ? AND age <= ? AND (date > ? OR date < ?) 
 ```
 
 > 使用嵌套结构体也可以实现条件分组，具体看测试文件
