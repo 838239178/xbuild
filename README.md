@@ -16,6 +16,7 @@ SQL builder base on xorm. Using a struct to build query sql.
 | or      | Concat previous condition by 'OR'         |
 | opt=?   | eq/in/gt... default is eq                 |
 | col=?   | define column name, default is field name |
+| func=?   | the function will be applied to column. Ex. TIMESTAMP |
 
 > FieldName Operation judging has been deprecated
 

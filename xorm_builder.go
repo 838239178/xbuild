@@ -65,17 +65,24 @@ func DeepCondAlias(bean interface{}, tableAlias string) (builder.Cond, error) {
 	return cond, nil
 }
 
+func buildColumnName(f *field, table string) (string,string) {
+	actualName := f.tag.Column(f.fie.Name)
+	actualName = xormNames.Obj2Table(actualName)
+	actualName = ifElse(table != "", fmt.Sprintf("`%s`.`%s`", table, actualName), actualName)
+	withFunc := ifElse(f.tag.fun != "", fmt.Sprintf("%s(%s)", f.tag.fun, actualName), actualName)
+	return withFunc, actualName
+}
+
 func buildCond(fs []*field, alias string) builder.Cond {
 	var cond builder.Cond
 	for _, f := range fs {
-		actualName, cmp := f.tag.Column(f.fie.Name), f.tag.Oper()
-		actualName = xormNames.Obj2Table(actualName)
-		actualName = ifElse(alias != "", fmt.Sprintf("`%s`.`%s`", alias, actualName), actualName)
+		withFuncName, actualName := buildColumnName(f, alias)
+		cmp := f.tag.Oper()
 		var c builder.Cond
 		if strings.ContainsAny(cmp, "&|") {
-			c = arrayCond(cmp, actualName, f.val, f.tag)
+			c = arrayCond(cmp, withFuncName, f.val, f.tag)
 		} else {
-			c = getCond(cmp, actualName, f.val)
+			c = getCond(cmp, withFuncName, f.val)
 		}
 		if !f.tag.null {
 			c = c.And(builder.NotNull{actualName})

@@ -15,6 +15,7 @@ type sqlTag struct {
 	null   bool   //null allowed null value if true otherwise concat 'AND xxx IS NOT NULL' (default true)
 	opt    string //opt eq/lt/ge...
 	col    string //column name
+	fun    string //sql func applied to field
 }
 
 func (s *sqlTag) Oper() string {
@@ -78,6 +79,8 @@ func getTag(tg reflect.StructTag) (gtg sqlTag) {
 							gtg.opt = kv[1]
 						case "col":
 							gtg.col = kv[1]
+						case "func":
+							gtg.fun = kv[1]
 						}
 					}
 				}

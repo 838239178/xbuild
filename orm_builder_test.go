@@ -24,10 +24,10 @@ type TestGroup3 struct {
 }
 
 type TestGroup2 struct {
-	Name       string        `sql:"zero"`         //zero means allow zero value
-	PostDate   time.Time     `sql:"zero,no-null"` //no-null means '(post_date = 'xx' AND post_date IS NOT NULL)'
-	CreateDate *[2]time.Time `sql:"opt=btw"`      //btw means 'create_date BETWEEN ? AND ?'; nil value cause panic; won't ignore zero value even if there has the `zero` tag
-	Info       string        `sql:"opt=like-r"`   //like-r means 'info LIKE ?%'; like-l means '%?'; like means '%?%';
+	Name       string        `sql:"zero"`                        //zero means allow zero value
+	PostDate   time.Time     `sql:"zero,no-null,func=TIMESTAMP"` //means '(TIMESTAMP(post_date) = 'xx' AND post_date IS NOT NULL)'
+	CreateDate *[2]time.Time `sql:"opt=btw"`                     //btw means 'create_date BETWEEN ? AND ?'; nil value cause panic; won't ignore zero value even if there has the `zero` tag
+	Info       string        `sql:"opt=like-r"`                  //like-r means 'info LIKE ?%'; like-l means '%?'; like means '%?%';
 }
 
 type TestGroup struct {
@@ -91,18 +91,18 @@ func TestXormBuilder(t *testing.T) {
 		},
 	}, "tb")
 	// SELECT tb.id, tb.age, tb.major_id
-	// FROM `tb` INNER JOIN `major` ON major.id = tb.major_id 
-	// WHERE `tb`.`id` IN (?,?,?) 
+	// FROM `tb` INNER JOIN `major` ON major.id = tb.major_id
+	// WHERE `tb`.`id` IN (?,?,?)
 	// AND (
-	//	(`major`.`age`>? AND `major`.`age`<=?) 
+	//	(`major`.`age`>? AND `major`.`age`<=?)
 	//	OR (
-	//		`tb`.`name`=? 
-	//		AND `tb`.`post_date`=? 
-	//		AND `tb`.`post_date` IS NOT NULL 
-	//		AND `tb`.`create_date` BETWEEN ? AND ? 
+	//		`tb`.`name`=?
+	//		AND TIMESTAMP(`tb`.`post_date`) = ?
+	//		AND `tb`.`post_date` IS NOT NULL
+	//		AND `tb`.`create_date` BETWEEN ? AND ?
 	//		AND `tb`.`info` LIKE ?
 	//	)
-    //)
+	//)
 	_, _ = xormDB.Table(&TestTable{}).Alias("tb").Where(cond).
 		Select("tb.id, tb.age, tb.major_id").
 		Join("INNER", "major", "major.id = tb.major_id").
