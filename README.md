@@ -1,26 +1,26 @@
+[English doc](./README_eng.md)
+
 # XormBuilder
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/838239178/xbuild.svg)](https://pkg.go.dev/github.com/838239178/xbuild)
 
-SQL builder base on xorm. Using a struct to build query sql.
+利用结构体TAG轻松构造XORM复杂的条件查询
 
-## Config tags
+## 可配置的TAG
 
-**Using tag 'sql'. Split by ','. Key-value like 'k=v'**
+**TAG名为‘sql’，使用‘，’分割**
 
 | Option  | Meaning                                   |
 | ------- | ----------------------------------------- |
-| zero    | Allowed zero value                        |
-| -       | skip field                                |
-| no-null | Concat 'AND xx IS NOT NULL' when building |
-| or      | Concat previous condition by 'OR'         |
-| opt=?   | eq/in/gt... default is eq                 |
-| col=?   | define column name, default is field name |
-| func=?   | the function will be applied to column. Ex. TIMESTAMP |
+| zero    | 允许零值，默认当字段为零值时忽略条件                        |
+| -       | 跳过这个字段                                |
+| no-null | 额外拼接 'AND xx IS NOT NULL' 到条件中 |
+| or      | 使用 'OR' 与上一个字段拼接         |
+| opt=?   | 比较条件 eq/in/gt... 默认为eq               |
+| col=?   | 定义列名，默认为结构体字段名 |
+| func=?   | 设置一个可以应用到列名的SQL函数 Ex. TIMESTAMP |
 
-> FieldName Operation judging has been deprecated
-
-### Supported opt
+### 支持的查询条件
 
 | Opt        | Meaning           |
 | ---------- | ----------------- |
@@ -37,31 +37,33 @@ SQL builder base on xorm. Using a struct to build query sql.
 | like-r     | LIKE value%       |
 | btw        | BETWEEN v1 AND v2 |
 
-> `btw` panic if value is not array or slice or containing nil element
+> 如果`btw`对应的字段不是切片或者数组，会发生PANIC
 
-#### Group opt
+#### 组合条件
 
-Using '&' or '|' to group conditions with array parameter. Ex:
+使用分隔符 '&' or '|' 和数组或切片字段形成一组会被括号起来的条件. Ex:
 
 ```go	
 type Cond struct {
   Age  *[2]int 				`sql:"opt=gt&le"`       //zero value element will be ignored
-  Date *[2]time.Time  `sql:"opt=gt|lt,zero"`  //allow zero value element
+  Date *[2]time.Time        `sql:"opt=gt|lt,zero"`  //allow zero value element
 }
 // age >= ? AND age < ? AND (date >= ? OR date < ?) 
 ```
 
-> using others splitter will cause panic
+> 使用嵌套结构体也可以实现条件分组，具体看测试文件
 
-## Example
+> 使用其他分隔符会造成PANIC
 
-See [test file](orm_builder_test.go)
+## 例子
 
-**Note**: Anonymous field thinks as a part of main table and named field is a joined table. All un-exported or nil field will be ignored.
+具体查看 [测试文件](orm_builder_test.go)
 
-## Benchmark
+**Note**: 未导出字段和Nil指针将被忽略，匿名结构体（组合）被视为一张表的组合条件，但是具名结构体会被视为另一张表，表明与结构体字段的名称一致
 
-Simple benchmark:
+## 基准测试
+
+简易基准测试:
 
 ```shell
 goos: darwin
